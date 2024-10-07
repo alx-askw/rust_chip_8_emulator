@@ -57,44 +57,62 @@ impl Chip8 {
         match instruction {
             0x0 => match opcode {
                 0x00E0 => {
-                    println!("This Clears the screen");
+                    println!("(0E0) This Clears the screen");
                 }
                 0x00EE => {
-                    println!("Returns from a Subroutine");
+                    println!("(0EE) Returns from a Subroutine");
                 }
                 _ => {
                     //TODO: Add catch arm for 0x0NNN and have catch all return unknown opcode
-                    println!("NNN = {:X}", opcode & 0x0FFF);
+                    println!("(0_) NNN = {:X}", opcode & 0x0FFF);
                 }
             },
             0x1 => {
-                println!("Jump to: {:X}", opcode & 0x0FFF);
+                println!("(1) Jump to: {:X}", opcode & 0x0FFF);
             }
             0x2 => {
-                println!("Calls Subroutine: {:X}", opcode & 0x0FFF);
+                println!("(2) Calls Subroutine: {:X}", opcode & 0x0FFF);
+            }
+            0x3 => {
+                println!(
+                    "(3) Skips the next instruction if VX {:X} equals NN {:X}",
+                    (opcode & 0x0F00) >> 8,
+                    opcode & 0x00FF
+                );
             }
             0x6 => {
-                println!("Sets V {:X} to {:X}", (opcode >> 8) & 0x0F, opcode & 0x00FF);
+                println!(
+                    "(6) Sets V {:X} to {:X}",
+                    (opcode >> 8) & 0x0F,
+                    opcode & 0x00FF
+                );
+            }
+            0x7 => {
+                println!(
+                    "(7) Adds (NN) {:X} to (VX) {:X} (carry flag is not changed).",
+                    (opcode & 0x00FF),
+                    (opcode & 0x0F00) >> 8
+                )
             }
             0xA => {
-                println!("Sets I to the address {:X}", opcode & 0x0FFF);
+                println!("(A) Sets I to the address {:X}", opcode & 0x0FFF);
             }
             0xB => {
-                println!("Jumps to the address {} plus V0", opcode & 0x0FFF);
+                println!("(B) Jumps to the address {} plus V0", opcode & 0x0FFF);
             }
             0xD => {
                 println!(
-                    "Draw sprint at VX: {:X} VY: {:X} Height {:X}",
+                    "(D) Draw sprint at VX: {:X} VY: {:X} Height {:X}",
                     (opcode >> 8) & 0x0F,
                     (opcode >> 4) & 0x0F,
                     opcode & 0x0F
                 );
             }
             0xF => match opcode {
-                _ => println!("F not finished"),
+                _ => println!("(F) not finished"),
             },
             _ => {
-                println!("Not added yet: {:X}", opcode);
+                println!("(_) Not added yet: {:X}", opcode);
             }
         }
     }
