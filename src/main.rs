@@ -80,6 +80,13 @@ impl Chip8 {
                     opcode & 0x00FF
                 );
             }
+            0x4 => {
+                println!(
+                    "(4) Skips the next instruction if VX {:X} does not equal NN {:X}",
+                    (opcode & 0x0F00) >> 8,
+                    opcode & 0x00FF
+                );
+            }
             0x6 => {
                 println!(
                     "(6) Sets V {:X} to {:X}",
@@ -94,6 +101,9 @@ impl Chip8 {
                     (opcode & 0x0F00) >> 8
                 )
             }
+            0x8 => {
+                println!("(8) Not impled");
+            }
             0xA => {
                 println!("(A) Sets I to the address {:X}", opcode & 0x0FFF);
             }
@@ -107,6 +117,9 @@ impl Chip8 {
                     (opcode >> 4) & 0x0F,
                     opcode & 0x0F
                 );
+            }
+            0xE => {
+                println!("(E) Not impled");
             }
             0xF => match opcode {
                 _ => println!("(F) not finished"),
