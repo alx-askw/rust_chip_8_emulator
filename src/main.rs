@@ -9,6 +9,7 @@ struct Chip8 {
     memory: [u8; 4096],
     stack: [u16; 16],
     stack_pointer: usize,
+    v_registers: [u8; 16],
     last_update: Instant,
     delay_timer: u8,
     sound_timer: u8,
@@ -21,6 +22,7 @@ impl Chip8 {
             memory: [0; 4096],
             stack: [0; 16],
             stack_pointer: 0,
+            v_registers: [0; 16],
             last_update: Instant::now(),
             delay_timer: 0,
             sound_timer: 0,
@@ -140,7 +142,7 @@ fn main() {
         for opcode in &chip_8.rom_buffer.clone() {
             chip_8.update_timer();
             chip_8.execute_opcode(opcode);
-            //           println!("Timer: {} \n Opcode:{:04X}", chip_8.delay_timer, opcode);
+            //println!("Timer: {} \n Opcode:{:04X}", chip_8.delay_timer, opcode);
             std::thread::sleep(TIMER_INTERVAL);
         }
     }
