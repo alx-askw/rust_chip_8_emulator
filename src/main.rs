@@ -13,7 +13,7 @@ struct Chip8 {
     last_update: Instant,
     delay_timer: u8,
     sound_timer: u8,
-    rom_buffer: Vec<u16>,
+    rom_size: u16,
 }
 
 impl Chip8 {
@@ -26,7 +26,7 @@ impl Chip8 {
             last_update: Instant::now(),
             delay_timer: 0,
             sound_timer: 0,
-            rom_buffer: Vec::new(),
+            rom_size: 0,
         }
     }
 
@@ -34,11 +34,10 @@ impl Chip8 {
         let mut f: File = File::open("IBM Logo.ch8").expect("cannot find file");
         let mut byte_buffer: Vec<u8> = Vec::new();
         f.read_to_end(&mut byte_buffer).unwrap();
-        for i in (0..byte_buffer.len()).step_by(2) {
-            let opcode = (byte_buffer[i] as u16) << 8 | (byte_buffer[i + 1] as u16);
-            println!("Opcode: {:04X}", opcode);
-            self.rom_buffer.push(opcode);
-        }
+        self.rom_size = byte_buffer.len() as u16;
+        let start_address: usize = 512; //0x200
+        let end_address: usize = start_address + byte_buffer.len();
+        self.memory[start_address..end_address].copy_from_slice(&byte_buffer);
     }
 
     fn update_timer(&mut self) {
@@ -54,7 +53,7 @@ impl Chip8 {
         }
     }
 
-    fn execute_opcode(&self, opcode: &u16) {
+    fn execute_opcode(&self, opcode: u16) {
         let instruction: u8 = (opcode >> 12) as u8;
         match instruction {
             0x0 => match opcode {
@@ -139,11 +138,26 @@ fn main() {
     let mut chip_8 = Chip8::new();
     chip_8.read_chip_8_file_as_bytes();
     if true {
-        for opcode in &chip_8.rom_buffer.clone() {
+        println!("{}", chip_8.rom_size);
+        for opcode in (512..512 + chip_8.rom_size).step_by(2) {
             chip_8.update_timer();
+            println!("{:04X}", opcode);
+            opcode = (byte_buffer[i] as u16) << 8 | (byte_buffer[i + 1] as u16);
             chip_8.execute_opcode(opcode);
             //println!("Timer: {} \n Opcode:{:04X}", chip_8.delay_timer, opcode);
             std::thread::sleep(TIMER_INTERVAL);
         }
     }
 }
+
+/*        for i in (0..byte_buffer.len()).step_by(2) {
+            let opcode = (byte_buffer[i] as u16) << 8 | (byte_buffer[i + 1] as u16);
+            println!("Opcode: {:04X}", opcode);
+            self.rom_buffer.push(opcode);
+        }
+        for i in 0..self.memory.len() {
+            println!("test {} - {:04X}", i, self.memory[i]);
+        }
+    rom_buffer: Vec<u16>,
+            rom_buffer: Vec::new(),
+*/
