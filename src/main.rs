@@ -142,8 +142,10 @@ fn main() {
         for opcode in (512..512 + chip_8.rom_size).step_by(2) {
             chip_8.update_timer();
             println!("{:04X}", opcode);
-            opcode = (byte_buffer[i] as u16) << 8 | (byte_buffer[i + 1] as u16);
-            chip_8.execute_opcode(opcode);
+            let decoded_opcode = (chip_8.memory[opcode as usize] as u16) << 8
+                | (chip_8.memory[opcode as usize + 1] as u16); //not a huge fan of the as sizes
+                                                               //here
+            chip_8.execute_opcode(decoded_opcode);
             //println!("Timer: {} \n Opcode:{:04X}", chip_8.delay_timer, opcode);
             std::thread::sleep(TIMER_INTERVAL);
         }
