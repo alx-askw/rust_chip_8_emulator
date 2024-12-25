@@ -1,15 +1,18 @@
 use std::fs::File;
 use std::io::Read;
 use std::time::{Duration, Instant};
+use std::usize;
 
 //1000 / 60 = ~16
 const TIMER_INTERVAL: Duration = Duration::from_millis(16);
 
 struct Chip8 {
     memory: [u8; 4096],
+    program_counter: u16,
     stack: [u16; 16],
     stack_pointer: usize,
-    v_registers: [u8; 16],
+    v_registers: [u8; 16], //this is what you call Vx in instructions
+    i_register: u16,
     last_update: Instant,
     delay_timer: u8,
     sound_timer: u8,
@@ -20,9 +23,11 @@ impl Chip8 {
     fn new() -> Self {
         Chip8 {
             memory: [0; 4096],
+            program_counter: 0,
             stack: [0; 16],
             stack_pointer: 0,
             v_registers: [0; 16],
+            i_register: 0,
             last_update: Instant::now(),
             delay_timer: 0,
             sound_timer: 0,
@@ -48,12 +53,13 @@ impl Chip8 {
             }
 
             if self.sound_timer > 0 {
+                //TODO: if this condition is met - let off sound
                 self.sound_timer -= 1;
             }
         }
     }
 
-    fn execute_opcode(&self, opcode: u16) {
+    fn execute_opcode(&mut self, opcode: u16) {
         let instruction: u8 = (opcode >> 12) as u8;
         match instruction {
             0x0 => match opcode {
@@ -62,6 +68,10 @@ impl Chip8 {
                 }
                 0x00EE => {
                     println!("(0EE) Returns from a Subroutine");
+                    self.program_counter = self.stack[self.stack_pointer];
+                    if (self.stack_pointer != 0) {
+                        self.stack_pointer -= 1;
+                    }
                 }
                 _ => {
                     //TODO: Add catch arm for 0x0NNN and have catch all return unknown opcode
@@ -70,9 +80,17 @@ impl Chip8 {
             },
             0x1 => {
                 println!("(1) Jump to: {:X}", opcode & 0x0FFF);
+                self.program_counter = opcode & 0x0FFF;
             }
             0x2 => {
                 println!("(2) Calls Subroutine: {:X}", opcode & 0x0FFF);
+
+                if self.stack_pointer >= self.stack.len() {
+                    println!("stack overflow");
+                }
+                self.stack_pointer += 1;
+                self.stack[self.stack_pointer] = self.program_counter;
+                self.program_counter = opcode & 0x0FFF;
             }
             0x3 => {
                 println!(
@@ -80,6 +98,13 @@ impl Chip8 {
                     (opcode & 0x0F00) >> 8,
                     opcode & 0x00FF
                 );
+
+                let vx: usize = ((opcode & 0x0F00) >> 8) as usize;
+                let nn: u8 = (opcode & 0x00FF) as u8;
+
+                if (self.v_registers[vx] == nn) {
+                    self.program_counter += 2;
+                }
             }
             0x4 => {
                 println!(
@@ -87,13 +112,18 @@ impl Chip8 {
                     (opcode & 0x0F00) >> 8,
                     opcode & 0x00FF
                 );
+
+                let vx: usize = ((opcode & 0x0F00) >> 8) as usize;
+                let nn: u8 = (opcode & 0x00FF) as u8;
+
+                if (self.v_registers[vx] != nn) {
+                    self.program_counter += 2;
+                }
             }
             0x6 => {
-                println!(
-                    "(6) Sets V {:X} to {:X}",
-                    (opcode >> 8) & 0x0F,
-                    opcode & 0x00FF
-                );
+                let vx: usize = ((opcode & 0x0F00) >> 8) as usize;
+                let nn: u8 = (opcode & 0x00FF) as u8;
+                self.v_registers[vx] = nn;
             }
             0x7 => {
                 println!(
@@ -141,7 +171,7 @@ fn main() {
         println!("{}", chip_8.rom_size);
         for opcode in (512..512 + chip_8.rom_size).step_by(2) {
             chip_8.update_timer();
-            println!("{:04X}", opcode);
+            //println!("{:04X}", opcode);
             let decoded_opcode = (chip_8.memory[opcode as usize] as u16) << 8
                 | (chip_8.memory[opcode as usize + 1] as u16); //not a huge fan of the as sizes
                                                                //here
