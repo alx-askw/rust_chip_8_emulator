@@ -93,44 +93,31 @@ impl Chip8 {
                 self.program_counter = opcode & 0x0FFF;
             }
             0x3 => {
-                println!(
-                    "(3) Skips the next instruction if VX {:X} equals NN {:X}",
-                    (opcode & 0x0F00) >> 8,
-                    opcode & 0x00FF
-                );
-
-                let vx: usize = ((opcode & 0x0F00) >> 8) as usize;
+                let vx: u8 = ((opcode & 0x0F00) >> 8) as u8;
                 let nn: u8 = (opcode & 0x00FF) as u8;
 
-                if (self.v_registers[vx] == nn) {
+                if (self.v_registers[vx as usize] == nn) {
                     self.program_counter += 2;
                 }
             }
             0x4 => {
-                println!(
-                    "(4) Skips the next instruction if VX {:X} does not equal NN {:X}",
-                    (opcode & 0x0F00) >> 8,
-                    opcode & 0x00FF
-                );
-
-                let vx: usize = ((opcode & 0x0F00) >> 8) as usize;
+                let vx: u8 = ((opcode & 0x0F00) >> 8) as u8;
                 let nn: u8 = (opcode & 0x00FF) as u8;
 
-                if (self.v_registers[vx] != nn) {
+                if (self.v_registers[vx as usize] != nn) {
                     self.program_counter += 2;
                 }
             }
             0x6 => {
-                let vx: usize = ((opcode & 0x0F00) >> 8) as usize;
+                let vx: u8 = ((opcode & 0x0F00) >> 8) as u8;
                 let nn: u8 = (opcode & 0x00FF) as u8;
-                self.v_registers[vx] = nn;
+                self.v_registers[vx as usize] = nn;
             }
             0x7 => {
-                println!(
-                    "(7) Adds (NN) {:X} to (VX) {:X} (carry flag is not changed).",
-                    (opcode & 0x00FF),
-                    (opcode & 0x0F00) >> 8
-                )
+                let vx: u8 = ((opcode & 0x0F00) >> 8) as u8;
+                let nn: u8 = (opcode & 0x00FF) as u8;
+
+                self.v_registers[vx as usize] = self.v_registers[vx as usize] + nn;
             }
             0x8 => {
                 println!("(8) Not impled");
