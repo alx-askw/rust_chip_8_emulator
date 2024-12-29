@@ -1,7 +1,8 @@
+mod chip8_opcodes;
 use std::fs::File;
 use std::io::Read;
 use std::time::{Duration, Instant};
-use std::usize;
+use std::{u16, usize};
 
 //1000 / 60 = ~16
 const TIMER_INTERVAL: Duration = Duration::from_millis(16);
@@ -120,7 +121,21 @@ impl Chip8 {
                 self.v_registers[vx as usize] = self.v_registers[vx as usize] + nn;
             }
             0x8 => {
-                println!("(8) Not impled");
+                //how should I split these into functions, probably one per suffix number but maybe
+                //just one for 8 prefix and that method has a match
+                let last_nibble: u16 = opcode & 0x000F;
+                match last_nibble {
+                    0 => {}
+                    1 => {}
+                    2 => {}
+                    3 => {}
+                    4 => {}
+                    5 => {}
+                    6 => {}
+                    7 => {}
+                    E => {}
+                }
+                println!("(8) {:X} | Not impled {:X}", last_nibble, opcode);
             }
             0xA => {
                 println!("(A) Sets I to the address {:X}", opcode & 0x0FFF);
