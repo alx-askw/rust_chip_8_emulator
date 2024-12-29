@@ -4,6 +4,10 @@ use std::io::Read;
 use std::time::{Duration, Instant};
 use std::{u16, usize};
 
+const IBM_LOGO: &str = "IBM Logo.ch8";
+
+const CORAX_TEST: &str = "3-corax+.ch8";
+
 //1000 / 60 = ~16
 const TIMER_INTERVAL: Duration = Duration::from_millis(16);
 
@@ -39,7 +43,7 @@ impl Chip8 {
     }
 
     fn read_chip_8_file_as_bytes(&mut self) {
-        let mut f: File = File::open("IBM Logo.ch8").expect("cannot find file");
+        let mut f: File = File::open(CORAX_TEST).expect("cannot find file");
         let mut byte_buffer: Vec<u8> = Vec::new();
         f.read_to_end(&mut byte_buffer).unwrap();
         self.rom_size = byte_buffer.len() as u16;
@@ -118,18 +122,17 @@ impl Chip8 {
             }
             0x7 => {
                 let vx: u8 = ((opcode & 0x0F00) >> 8) as u8;
-                let nn: u8 = (opcode & 0x00FF) as u8;
-
-                self.v_registers[vx as usize] = self.v_registers[vx as usize] + nn;
+                let nn: u16 = (opcode & 0x00FF);
+                self.v_registers[vx as usize] = (self.v_registers[vx as usize] as u16 + nn) as u8;
             }
             0x8 => {
                 //how should I split these into functions, probably one per suffix number but maybe
                 //just one for 8 prefix and that method has a match
 
                 //8 x y n
+                let x: u16 = (opcode & 0x0F00) >> 8;
+                let y: u16 = (opcode & 0x00F0) >> 4;
                 let n: u16 = opcode & 0x000F;
-                let x: u16 = opcode & 0x0F00;
-                let y: u16 = opcode & 0x00F0;
                 match n {
                     0 => self.v_registers[x as usize] = self.v_registers[y as usize],
                     1 => {
@@ -144,8 +147,26 @@ impl Chip8 {
                         self.v_registers[x as usize] =
                             self.v_registers[x as usize] ^ self.v_registers[y as usize]
                     }
-                    4 => {}
-                    5 => {}
+                    4 => {
+                        let vx_plus_vy: u16 = self.v_registers[x as usize] as u16
+                            + self.v_registers[y as usize] as u16; //grim - we can use a built in
+                                                                   //rust func for calculating overflow
+                        let is_carry: bool = vx_plus_vy > 255; //8 bit max value
+                        self.v_flag = if is_carry { 1 } else { 0 };
+                        self.v_registers[x as usize] = (self.v_registers[x as usize] as u16
+                            + self.v_registers[y as usize] as u16)
+                            as u8;
+                    }
+                    5 => {
+                        //TODO: READ UP NEGATIVE NUMVER/OVERFLOW/WRAPPING IN CHIP8 - WE ARE SETTING
+                        //V FLAG BUT I THINK WE NEED TO HANDLE THE WRAPPING AS WELL
+                        let is_vx_greater: bool =
+                            self.v_registers[x as usize] > self.v_registers[y as usize];
+                        self.v_flag = if is_vx_greater { 1 } else { 0 };
+                        self.v_registers[x as usize] = (self.v_registers[x as usize] as i16
+                            - self.v_registers[y as usize] as i16)
+                            as u8;
+                    }
                     6 => {}
                     7 => {}
                     E => {}
@@ -189,10 +210,15 @@ fn main() {
         for opcode in (512..512 + chip_8.rom_size).step_by(2) {
             chip_8.update_timer();
             //println!("{:04X}", opcode);
+            //https://stackoverflow.com/questions/11193918/combine-merge-two-bytes-into-one
             let decoded_opcode = (chip_8.memory[opcode as usize] as u16) << 8
                 | (chip_8.memory[opcode as usize + 1] as u16); //not a huge fan of the as sizes
                                                                //here
             chip_8.execute_opcode(decoded_opcode);
+            //println!(
+                "COUNTERS: pc - {} | sp - {}",
+                chip_8.program_counter, chip_8.stack_pointer
+            );
             //println!("Timer: {} \n Opcode:{:04X}", chip_8.delay_timer, opcode);
             std::thread::sleep(TIMER_INTERVAL);
         }
