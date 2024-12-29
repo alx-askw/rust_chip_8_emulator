@@ -215,7 +215,7 @@ fn main() {
                 | (chip_8.memory[opcode as usize + 1] as u16); //not a huge fan of the as sizes
                                                                //here
             chip_8.execute_opcode(decoded_opcode);
-            //println!(
+            println!(
                 "COUNTERS: pc - {} | sp - {}",
                 chip_8.program_counter, chip_8.stack_pointer
             );
