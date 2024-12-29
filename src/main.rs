@@ -13,6 +13,7 @@ struct Chip8 {
     stack: [u16; 16],
     stack_pointer: usize,
     v_registers: [u8; 16], //this is what you call Vx in instructions
+    v_flag: u8,
     i_register: u16,
     last_update: Instant,
     delay_timer: u8,
@@ -28,6 +29,7 @@ impl Chip8 {
             stack: [0; 16],
             stack_pointer: 0,
             v_registers: [0; 16],
+            v_flag: 0,
             i_register: 0,
             last_update: Instant::now(),
             delay_timer: 0,
@@ -123,19 +125,32 @@ impl Chip8 {
             0x8 => {
                 //how should I split these into functions, probably one per suffix number but maybe
                 //just one for 8 prefix and that method has a match
-                let last_nibble: u16 = opcode & 0x000F;
-                match last_nibble {
-                    0 => {}
-                    1 => {}
-                    2 => {}
-                    3 => {}
+
+                //8 x y n
+                let n: u16 = opcode & 0x000F;
+                let x: u16 = opcode & 0x0F00;
+                let y: u16 = opcode & 0x00F0;
+                match n {
+                    0 => self.v_registers[x as usize] = self.v_registers[y as usize],
+                    1 => {
+                        self.v_registers[x as usize] =
+                            self.v_registers[x as usize] | self.v_registers[y as usize]
+                    }
+                    2 => {
+                        self.v_registers[x as usize] =
+                            self.v_registers[x as usize] & self.v_registers[y as usize]
+                    }
+                    3 => {
+                        self.v_registers[x as usize] =
+                            self.v_registers[x as usize] ^ self.v_registers[y as usize]
+                    }
                     4 => {}
                     5 => {}
                     6 => {}
                     7 => {}
                     E => {}
                 }
-                println!("(8) {:X} | Not impled {:X}", last_nibble, opcode);
+                println!("(8) {:X} | Not impled {:X}", n, opcode);
             }
             0xA => {
                 println!("(A) Sets I to the address {:X}", opcode & 0x0FFF);
